@@ -289,7 +289,7 @@ func (writer *JSONWriter) WriteItem(item interface{}) *JSONWriter {
 			writer.BeginArray()
 			value := reflect.ValueOf(item)
 			for i := 0; i < value.Len(); i++ {
-				writer.WriteItem(value.Index(i))
+				writer.WriteItem(value.Index(i).Interface())
 			}
 			writer.EndArray()
 		case reflect.Map, reflect.Chan:

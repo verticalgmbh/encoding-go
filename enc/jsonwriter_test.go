@@ -129,3 +129,21 @@ func TestWriteObjectItemWithSubObjects(t *testing.T) {
 
 	assert.Equal(t, `{"test":{"name":"Test","number":8,"data":{"name":"SubTest","number":12}}}`, buffer.String())
 }
+
+func TestWriteObjectItemArray(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := NewJSONWriter(&buffer)
+
+	writer.BeginObject()
+	writer.WriteKey("test")
+	writer.WriteItem([...]*TestData{
+		&TestData{
+			Name:   "Test",
+			Number: 8},
+		&TestData{
+			Name:   "SubTest",
+			Number: 12}})
+	writer.EndObject()
+
+	assert.Equal(t, `{"test":[{"name":"Test","number":8},{"name":"SubTest","number":12}]}`, buffer.String())
+}

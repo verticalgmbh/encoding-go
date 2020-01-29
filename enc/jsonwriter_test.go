@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type TestData struct {
+	Name   string
+	Number int
+	Data   interface{}
+}
+
 func assertPanic(t *testing.T, f func()) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -91,4 +97,35 @@ func TestObjectItemClosesParentKey(t *testing.T) {
 	writer.EndObject()
 
 	assert.Equal(t, `{"something":{},"another":{}}`, buffer.String())
+}
+
+func TestWriteObjectItem(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := NewJSONWriter(&buffer)
+
+	writer.BeginObject()
+	writer.WriteKey("test")
+	writer.WriteItem(&TestData{
+		Name:   "Test",
+		Number: 8})
+	writer.EndObject()
+
+	assert.Equal(t, `{"test":{"name":"Test","number":8}}`, buffer.String())
+}
+
+func TestWriteObjectItemWithSubObjects(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := NewJSONWriter(&buffer)
+
+	writer.BeginObject()
+	writer.WriteKey("test")
+	writer.WriteItem(&TestData{
+		Name:   "Test",
+		Number: 8,
+		Data: &TestData{
+			Name:   "SubTest",
+			Number: 12}})
+	writer.EndObject()
+
+	assert.Equal(t, `{"test":{"name":"Test","number":8,"data":{"name":"SubTest","number":12}}}`, buffer.String())
 }

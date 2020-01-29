@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 // JSONState current state of JSON writer
@@ -67,9 +68,8 @@ func JSONStateName(jsontype JSONState, isitem bool) string {
 	case JSONStateNone:
 		if isitem {
 			return "Item"
-		} else {
-			return "None"
 		}
+		return "None"
 	case JSONStateObject:
 		return "Object"
 	case JSONStateArray:
@@ -204,6 +204,11 @@ func (writer *JSONWriter) WriteKey(key string) *JSONWriter {
 // **Returns**
 //   - *JSONWriter: created JSONWriter
 func (writer *JSONWriter) WriteProperty(name string, value interface{}) *JSONWriter {
+	// don't write null values
+	if value == nil {
+		return writer
+	}
+
 	writer.WriteKey(name)
 	writer.WriteItem(value)
 	return writer
@@ -223,6 +228,47 @@ func (writer *JSONWriter) Close() {
 			panic("Invalid json state")
 		}
 	}
+}
+
+func (writer *JSONWriter) toCamelCase(data string) string {
+	if len(data) == 0 {
+		return data
+	}
+
+	var firstrune rune
+	for _, firstrune = range data {
+		break
+	}
+
+	if unicode.IsLower(firstrune) {
+		return data
+	}
+
+	return string(unicode.ToLower(firstrune)) + data[1:]
+}
+
+func (writer *JSONWriter) writeObject(item interface{}) {
+	writer.BeginObject()
+	typeinfo := reflect.TypeOf(item)
+	if typeinfo.Kind() == reflect.Ptr {
+		typeinfo = typeinfo.Elem()
+	}
+
+	typevalue := reflect.ValueOf(item)
+	if typevalue.Kind() == reflect.Ptr {
+		typevalue = typevalue.Elem()
+	}
+
+	for i := 0; i < typeinfo.NumField(); i++ {
+		fieldvalue := typevalue.Field(i)
+		if fieldvalue.Kind() == reflect.Ptr && fieldvalue.IsNil() {
+			continue
+		}
+
+		field := typeinfo.Field(i)
+		writer.WriteProperty(writer.toCamelCase(field.Name), fieldvalue.Interface())
+	}
+	writer.EndObject()
 }
 
 // WriteItem writes an arbitrary item
@@ -251,9 +297,7 @@ func (writer *JSONWriter) WriteItem(item interface{}) *JSONWriter {
 		default:
 			switch item.(type) {
 			default:
-				writer.BeginObject()
-				// write object
-				writer.EndObject()
+				writer.writeObject(item)
 			case bool:
 				if item.(bool) {
 					io.WriteString(writer.writer, "true")

@@ -109,6 +109,11 @@ func (writer *JSONWriter) end() {
 	writer.structure = (writer.structure >> 2)
 	writer.depth--
 
+	if writer.depth > 0 && JSONState(writer.structure&3) == JSONStateKey {
+		writer.structure = (writer.structure >> 2)
+		writer.depth--
+	}
+
 	if writer.depth == 0 {
 		writer.depth = -1
 	}

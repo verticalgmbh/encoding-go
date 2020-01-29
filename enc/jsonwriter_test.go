@@ -76,3 +76,19 @@ func TestKeyAtKeyFails(t *testing.T) {
 	writer.WriteKey("something")
 	assertPanic(t, func() { writer.WriteKey("anything") })
 }
+
+func TestObjectItemClosesParentKey(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := NewJSONWriter(&buffer)
+
+	writer.BeginObject()
+	writer.WriteKey("something")
+	writer.BeginObject()
+	writer.EndObject()
+	writer.WriteKey("another")
+	writer.BeginObject()
+	writer.EndObject()
+	writer.EndObject()
+
+	assert.Equal(t, `{"something":{},"another":{}}`, buffer.String())
+}

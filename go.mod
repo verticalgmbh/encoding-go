@@ -1,4 +1,4 @@
-module github.com/telmengedar/go.encoding
+module github.com/verticalgmbh/encoding-go
 
 go 1.13
 
